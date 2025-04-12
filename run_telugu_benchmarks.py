@@ -149,7 +149,8 @@ def run_benchmark(args):
                     --num_fewshot {args.num_fewshot} \
                     --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
                     --include_path lm_eval/tasks/custom_tasks \
-                    --log_samples"
+                    --log_samples \
+                    --model_type vllm"
             else:
                 cmd = f"lm_eval \
                     --model hf \
@@ -160,7 +161,8 @@ def run_benchmark(args):
                     --num_fewshot {args.num_fewshot} \
                     --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
                     --include_path lm_eval/tasks/custom_tasks \
-                    --log_samples"
+                    --log_samples \
+                    --model_type vllm"
             
             print(f"Running benchmark for {task} with command:\n{cmd}")
             subprocess.run(cmd, shell=True, check=True)
