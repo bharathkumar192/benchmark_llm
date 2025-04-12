@@ -16,7 +16,7 @@ python run_telugu_benchmarks.py \
     --model_type hf \
     --device $DEVICE \
     --batch_size 4 \
-    --num_fewshot 5 \
+    --num_fewshot 3 \
     --trust_remote_code \
     --output_dir "./telugu_benchmark_results"
 

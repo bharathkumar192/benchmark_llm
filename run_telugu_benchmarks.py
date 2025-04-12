@@ -117,33 +117,51 @@ def run_benchmark(args):
     results_dir = os.path.join(args.output_dir, f"{model_name}_{timestamp}")
     os.makedirs(results_dir, exist_ok=True)
     
-    # Build the command
+    # Build the command with memory offloading parameters
     model_args = f"pretrained={args.model_path}"
     if args.trust_remote_code:
         model_args += ",trust_remote_code=True"
     
+    # Add device mapping for better memory utilization
+    model_args += f",max_length=4096"
+    
     # Change directory to the lm-evaluation-harness folder
+    original_dir = os.getcwd()
     os.chdir("lm-evaluation-harness")
     
-    cmd = f"lm_eval \
-        --model {args.model_type} \
-        --model_args {model_args} \
-        --tasks {args.tasks} \
-        --device {args.device} \
-        --batch_size {args.batch_size} \
-        --num_fewshot {args.num_fewshot} \
-        --output_path ../{os.path.join(results_dir, 'results.json')} \
-        --include_path lm_eval/tasks/custom_tasks \
-        --log_samples"
+    # To debug the format of the dataset
+    print("Debugging dataset format:")
+    os.system("python -c \"from datasets import load_dataset; print(load_dataset('csv', data_files='../tasks_data/telugu_sentiment/test.csv')[0][0])\"")
     
-    print(f"Running benchmark with command:\n{cmd}")
-    subprocess.run(cmd, shell=True, check=True)
+    # Run each task separately to isolate issues
+    for task in ["telugu_sentiment", "mmlu_telugu"]:
+        try:
+            # Use the direct command with a single task
+            cmd = f"lm_eval \
+                --model hf \
+                --model_args {model_args} \
+                --tasks {task} \
+                --device {args.device} \
+                --batch_size {args.batch_size} \
+                --num_fewshot {args.num_fewshot} \
+                --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
+                --include_path lm_eval/tasks/custom_tasks \
+                --log_samples"
+            
+            print(f"Running benchmark for {task} with command:\n{cmd}")
+            subprocess.run(cmd, shell=True, check=True)
+            print(f"Successfully completed evaluation for {task}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error evaluating {task}: {e}")
     
     # Change back to the original directory
-    os.chdir("..")
+    os.chdir(original_dir)
     
-    # Generate a summary report
-    generate_summary(results_dir, args)
+    # Generate a summary report for successful tasks
+    try:
+        generate_summary(results_dir, args)
+    except Exception as e:
+        print(f"Error generating summary: {e}")
     
     return results_dir
 

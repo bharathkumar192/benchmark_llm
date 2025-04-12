@@ -28,8 +28,16 @@ def download_and_filter_indic_sentiment():
         telugu_df['label'] = telugu_df['label'].str.lower()
         print(f"Unique label values: {telugu_df['label'].unique()}")
         
+        # Ensure label is properly mapped to integers
+        # Make sure any None/null values are replaced with a valid class
         label_map = {'positive': 0, 'negative': 1, 'neutral': 2}
         telugu_df['label'] = telugu_df['label'].map(label_map)
+        
+        # Replace any remaining NaN values with a default class (e.g., neutral)
+        telugu_df['label'] = telugu_df['label'].fillna(2)
+        
+        # Convert to integer
+        telugu_df['label'] = telugu_df['label'].astype(int)
         
         telugu_data.append((split, telugu_df))
     

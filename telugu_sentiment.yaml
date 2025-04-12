@@ -1,12 +1,12 @@
-# telugu_sentiment.yaml
 task: telugu_sentiment
-dataset_path: ../../../tasks_data/telugu_sentiment
+dataset_path: tasks_data/telugu_sentiment
 output_type: multiple_choice
 test_split: test
 validation_split: validation
+cutoff_len: 4096
 doc_to_text: "{{text}}\nSentiment: "
 doc_to_choice: ["positive", "negative", "neutral"]
-doc_to_target: label
+doc_to_target: "{{label}}"
 metric_list:
   - metric: acc
     aggregation: mean
