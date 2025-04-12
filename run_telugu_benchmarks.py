@@ -38,16 +38,19 @@ def setup_task_configs():
     src_dir = Path(".")
     tasks_dir = Path("lm-evaluation-harness/lm_eval/tasks/custom_tasks")
     
+    # Get absolute path to the tasks_data directory
+    tasks_data_path = os.path.abspath("tasks_data")
+    
     os.makedirs(tasks_dir, exist_ok=True)
     
     # Create the task YAML files directly
-    telugu_sentiment_yaml = """
+    telugu_sentiment_yaml = f"""
 task: telugu_sentiment
-dataset_path: ../../../tasks_data/telugu_sentiment
+dataset_path: {tasks_data_path}/telugu_sentiment
 output_type: multiple_choice
 test_split: test
 validation_split: validation
-doc_to_text: "{{text}}\\nSentiment: "
+doc_to_text: "{{{{text}}}}\\nSentiment: "
 doc_to_choice: ["positive", "negative", "neutral"]
 doc_to_target: label
 metric_list:
@@ -68,13 +71,13 @@ metric_list:
     higher_is_better: true
 """
 
-    mmlu_telugu_yaml = """
+    mmlu_telugu_yaml = f"""
 task: mmlu_telugu
-dataset_path: ../../../tasks_data/mmlu_telugu
+dataset_path: {tasks_data_path}/mmlu_telugu
 output_type: multiple_choice
 test_split: test
 validation_split: validation
-doc_to_text: "{{question}}\\nA. {{choices[0]}}\\nB. {{choices[1]}}\\nC. {{choices[2]}}\\nD. {{choices[3]}}\\nAnswer:"
+doc_to_text: "{{{{question}}}}\\nA. {{{{choices[0]}}}}\\nB. {{{{choices[1]}}}}\\nC. {{{{choices[2]}}}}\\nD. {{{{choices[3]}}}}\\nAnswer:"
 doc_to_choice: ["A", "B", "C", "D"]
 doc_to_target: answer
 metric_list:
