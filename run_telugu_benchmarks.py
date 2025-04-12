@@ -57,18 +57,6 @@ metric_list:
   - metric: acc
     aggregation: mean
     higher_is_better: true
-  - metric: f1
-    aggregation: mean
-    higher_is_better: true
-  - metric: precision
-    aggregation: mean
-    higher_is_better: true
-  - metric: recall
-    aggregation: mean
-    higher_is_better: true
-  - metric: acc_norm
-    aggregation: mean
-    higher_is_better: true
 """
 
     mmlu_telugu_yaml = f"""
@@ -77,6 +65,7 @@ dataset_path: {tasks_data_path}/mmlu_telugu
 output_type: multiple_choice
 test_split: test
 validation_split: validation
+num_fewshot: 0
 doc_to_text: "{{{{question}}}}\\nA. {{{{choices[0]}}}}\\nB. {{{{choices[1]}}}}\\nC. {{{{choices[2]}}}}\\nD. {{{{choices[3]}}}}\\nAnswer:"
 doc_to_choice: ["A", "B", "C", "D"]
 doc_to_target: answer
@@ -84,12 +73,6 @@ metric_list:
   - metric: acc
     aggregation: mean
     higher_is_better: true
-  - metric: acc_norm
-    aggregation: mean
-    higher_is_better: true
-  - metric: perplexity
-    aggregation: perplexity
-    higher_is_better: false
 """
 
     # Write the files
@@ -123,8 +106,10 @@ def run_benchmark(args):
         model_args += ",trust_remote_code=True"
     
     # Add device mapping for better memory utilization
-    # model_args += f",max_length="
-    model_args += ",use_gradient_checkpointing=True"
+    model_args += ",max_length=2048,use_gradient_checkpointing=True"
+    
+    # Set environment variable for PyTorch memory management
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
     # Change directory to the lm-evaluation-harness folder
     original_dir = os.getcwd()
@@ -137,32 +122,19 @@ def run_benchmark(args):
     # Run each task separately to isolate issues
     for task in ["telugu_sentiment", "mmlu_telugu"]:
         try:
-            # Use the direct command with a single task
-            # Modify the run_telugu_benchmarks.py script to use a smaller batch size for MMLU
+            # Construct command as a single string without line breaks within quotes
             if task == "mmlu_telugu":
-                cmd = f"lm_eval \
-                    --model hf \
-                    --model_args {model_args} \
-                    --tasks {task} \
-                    --device {args.device} \
-                    --batch_size 1 \ 
-                    --num_fewshot {args.num_fewshot} \
-                    --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
-                    --include_path lm_eval/tasks/custom_tasks \
-                    --log_samples \
-                    --model_type vllm"
+                # Use lower batch size for MMLU to avoid OOM
+                cmd = (f"lm_eval --model hf --model_args {model_args} --tasks {task} "
+                      f"--device {args.device} --batch_size 1 --num_fewshot 0 "
+                      f"--output_path ../{os.path.join(results_dir, f'{task}_results.json')} "
+                      f"--include_path lm_eval/tasks/custom_tasks --log_samples")
             else:
-                cmd = f"lm_eval \
-                    --model hf \
-                    --model_args {model_args} \
-                    --tasks {task} \
-                    --device {args.device} \
-                    --batch_size {args.batch_size} \
-                    --num_fewshot {args.num_fewshot} \
-                    --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
-                    --include_path lm_eval/tasks/custom_tasks \
-                    --log_samples \
-                    --model_type vllm"
+                # For sentiment task
+                cmd = (f"lm_eval --model hf --model_args {model_args} --tasks {task} "
+                      f"--device {args.device} --batch_size {args.batch_size} --num_fewshot {args.num_fewshot} "
+                      f"--output_path ../{os.path.join(results_dir, f'{task}_results.json')} "
+                      f"--include_path lm_eval/tasks/custom_tasks --log_samples")
             
             print(f"Running benchmark for {task} with command:\n{cmd}")
             subprocess.run(cmd, shell=True, check=True)
