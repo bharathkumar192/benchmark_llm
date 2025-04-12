@@ -123,8 +123,9 @@ def run_benchmark(args):
         model_args += ",trust_remote_code=True"
     
     # Add device mapping for better memory utilization
-    model_args += f",max_length=4096"
-    
+    # model_args += f",max_length="
+    model_args += ",use_gradient_checkpointing=True"
+
     # Change directory to the lm-evaluation-harness folder
     original_dir = os.getcwd()
     os.chdir("lm-evaluation-harness")
@@ -137,16 +138,29 @@ def run_benchmark(args):
     for task in ["telugu_sentiment", "mmlu_telugu"]:
         try:
             # Use the direct command with a single task
-            cmd = f"lm_eval \
-                --model hf \
-                --model_args {model_args} \
-                --tasks {task} \
-                --device {args.device} \
-                --batch_size {args.batch_size} \
-                --num_fewshot {args.num_fewshot} \
-                --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
-                --include_path lm_eval/tasks/custom_tasks \
-                --log_samples"
+            # Modify the run_telugu_benchmarks.py script to use a smaller batch size for MMLU
+            if task == "mmlu_telugu":
+                cmd = f"lm_eval \
+                    --model hf \
+                    --model_args {model_args} \
+                    --tasks {task} \
+                    --device {args.device} \
+                    --batch_size 1 \ 
+                    --num_fewshot {args.num_fewshot} \
+                    --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
+                    --include_path lm_eval/tasks/custom_tasks \
+                    --log_samples"
+            else:
+                cmd = f"lm_eval \
+                    --model hf \
+                    --model_args {model_args} \
+                    --tasks {task} \
+                    --device {args.device} \
+                    --batch_size {args.batch_size} \
+                    --num_fewshot {args.num_fewshot} \
+                    --output_path ../{os.path.join(results_dir, f'{task}_results.json')} \
+                    --include_path lm_eval/tasks/custom_tasks \
+                    --log_samples"
             
             print(f"Running benchmark for {task} with command:\n{cmd}")
             subprocess.run(cmd, shell=True, check=True)
