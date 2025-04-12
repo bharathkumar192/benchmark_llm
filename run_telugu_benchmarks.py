@@ -106,7 +106,7 @@ def run_benchmark(args):
         model_args += ",trust_remote_code=True"
     
     # Add device mapping for better memory utilization
-    model_args += ",max_length=2048,use_gradient_checkpointing=True"
+    model_args += ",max_length=2048"
     
     # Set environment variable for PyTorch memory management
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
